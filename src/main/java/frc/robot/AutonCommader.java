@@ -26,6 +26,10 @@ public class AutonCommader extends RobotCommander{
         auton = passedAuton;
     }
 
+    public void runAuto(){
+        auton.runAuto();
+    }
+
     @Override
     public double getForwardCommand() {
         // TODO Auto-generated method stub
@@ -51,7 +55,7 @@ public class AutonCommader extends RobotCommander{
     }
 
     public State getDesiredState(){
-        return auton.desiredState;
+        return auton.desState;
     }
 
     public Rotation2d getTargetTheta(){

@@ -79,7 +79,7 @@ public class Drivetrain{
                     new Translation2d(-DRIVETRAIN_TRACKWIDTH_METERS / 2.0, -DRIVETRAIN_WHEELBASE_METERS / 2.0));
 
     private HolonomicDriveController holonomicController;
-    private SwerveDriveOdometry odometry;
+    private static SwerveDriveOdometry odometry;
 
     double frontLeftPos;
     double frontRightPos;
@@ -177,7 +177,7 @@ public class Drivetrain{
 
         states = kinematics.toSwerveModuleStates(new ChassisSpeeds());
 
-        ProfiledPIDController thetaController = new ProfiledPIDController(1.8, .3, 0,  // Theta
+        ProfiledPIDController thetaController = new ProfiledPIDController(2.5, .5, 0,  // Theta
                                                 new TrapezoidProfile.Constraints(6.28, 3.14));
 
         thetaController.enableContinuousInput(-Math.PI, Math.PI);
@@ -270,6 +270,20 @@ public class Drivetrain{
                         states[3].angle.getRadians());
     }
 
+    public void stopMotors(){
+        states = kinematics.toSwerveModuleStates(new ChassisSpeeds());
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_VELOCITY_METERS_PER_SECOND);
+
+        frontLeftModule.set(states[0].speedMetersPerSecond / MAX_VELOCITY_METERS_PER_SECOND * MAX_VOLTAGE,
+                        states[0].angle.getRadians());
+        frontRightModule.set(states[1].speedMetersPerSecond / MAX_VELOCITY_METERS_PER_SECOND * MAX_VOLTAGE,
+                        states[1].angle.getRadians());
+        backLeftModule.set(states[2].speedMetersPerSecond / MAX_VELOCITY_METERS_PER_SECOND * MAX_VOLTAGE,
+                        states[2].angle.getRadians());
+        backRightModule.set(states[3].speedMetersPerSecond / MAX_VELOCITY_METERS_PER_SECOND * MAX_VOLTAGE,
+                        states[3].angle.getRadians());
+    }
+
 
     // private void setSwerveModuleStates(ChassisSpeeds chassisSpeeds) {
     //     states = kinematics.toSwerveModuleStates(chassisSpeeds);
@@ -333,7 +347,7 @@ public class Drivetrain{
     }
 
 
-    public Pose2d getPose(){
+    public static Pose2d getPose(){
         return odometry.getPoseMeters();
     }
 
@@ -361,6 +375,36 @@ public class Drivetrain{
         autoSetSwerveModuleStates(holonomicController.calculate(odometry.getPoseMeters(), 
                                                             desiredState,
                                                             targetTheta));
+
+        SmartDashboard.putNumber("Theta", Rotation2d.fromDegrees(Pigeon.getAngle()).getDegrees());
+        SmartDashboard.putNumber("X", odometry.getPoseMeters().getX());
+        SmartDashboard.putNumber("Y", odometry.getPoseMeters().getY());
+    }
+
+    public void autonAction(AutonCommader autonCommader){
+        frontLeftPos = (frontLeftDrive.getSelectedSensorPosition() / 2048) * SdsModuleConfigurations.MK4_L2.getDriveReduction() * Math.PI * SdsModuleConfigurations.MK4_L2.getWheelDiameter();
+        frontRightPos = (frontRightDrive.getSelectedSensorPosition() / 2048) * SdsModuleConfigurations.MK4_L2.getDriveReduction() * Math.PI * SdsModuleConfigurations.MK4_L2.getWheelDiameter();
+        backLeftPos = (backLeftDrive.getSelectedSensorPosition() / 2048) * SdsModuleConfigurations.MK4_L2.getDriveReduction() * Math.PI * SdsModuleConfigurations.MK4_L2.getWheelDiameter();
+        backRightPos = (backRightDrive.getSelectedSensorPosition() / 2048) * SdsModuleConfigurations.MK4_L2.getDriveReduction() * Math.PI * SdsModuleConfigurations.MK4_L2.getWheelDiameter();
+
+        positions[0].angle = new Rotation2d(frontLeftModule.getSteerAngle());
+        positions[0].distanceMeters = frontLeftPos;
+
+        positions[1].angle = new Rotation2d(frontRightModule.getSteerAngle());
+        positions[1].distanceMeters = frontRightPos;
+
+        positions[2].angle = new Rotation2d(backLeftModule.getSteerAngle());
+        positions[2].distanceMeters = backLeftPos;
+
+        positions[3].angle = new Rotation2d(backRightModule.getSteerAngle());
+        positions[3].distanceMeters = backRightPos;
+
+        odometry.update(Pigeon.getRotation2d(), positions);
+        // poseExstimator.update(Pigeon.getRotation2d(), states);
+
+        autoSetSwerveModuleStates(holonomicController.calculate(odometry.getPoseMeters(), 
+                                                            autonCommader.getDesiredState(),
+                                                            autonCommader.getDesiredState().poseMeters.getRotation()));
 
         SmartDashboard.putNumber("Theta", Rotation2d.fromDegrees(Pigeon.getAngle()).getDegrees());
         SmartDashboard.putNumber("X", odometry.getPoseMeters().getX());
