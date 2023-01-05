@@ -177,7 +177,7 @@ public class Drivetrain{
 
         states = kinematics.toSwerveModuleStates(new ChassisSpeeds());
 
-        ProfiledPIDController thetaController = new ProfiledPIDController(2.5, .5, 0,  // Theta
+        ProfiledPIDController thetaController = new ProfiledPIDController(1.7, .3, 0,  // Theta
                                                 new TrapezoidProfile.Constraints(6.28, 3.14));
 
         thetaController.enableContinuousInput(-Math.PI, Math.PI);

@@ -47,7 +47,6 @@ public class Robot extends TimedRobot {
         pigeon = new Pigeon();
         drivetrain = new Drivetrain();
         autonCommader = new AutonCommader();
-        auton = new Auton1();
     }
 
     @Override
@@ -68,6 +67,7 @@ public class Robot extends TimedRobot {
     public void autonomousInit() {
         Pigeon.zeroSensor();
         drivetrain.zero();
+        auton = new Auton1();
         autonCommader.initAuton(auton);
     }
 
